@@ -1,0 +1,670 @@
+I"��
+<!-- TOC  the css styling for this is \pages\assets\css\project.css under 'markdown-toc'-->
+
+<ul id="markdown-toc">
+  <li><a href="#introduction" id="markdown-toc-introduction">Introduction</a></li>
+  <li><a href="#profiles" id="markdown-toc-profiles">Profiles</a></li>
+  <li><a href="#data-exchange" id="markdown-toc-data-exchange">Data Exchange</a>    <ul>
+      <li><a href="#submit-data" id="markdown-toc-submit-data">Submit Data</a>        <ul>
+          <li><a href="#incremental-and-snapshot-updates" id="markdown-toc-incremental-and-snapshot-updates">Incremental and Snapshot Updates</a></li>
+        </ul>
+      </li>
+      <li><a href="#collect-data" id="markdown-toc-collect-data">Collect Data</a></li>
+      <li><a href="#submit-data-and-collect-data-for-multiple-patients" id="markdown-toc-submit-data-and-collect-data-for-multiple-patients">Submit Data and Collect Data for Multiple Patients</a></li>
+    </ul>
+  </li>
+</ul>
+
+<h2 id="introduction">Introduction</h2>
+
+<p>Clinical Quality Measures (CQMs) are a common tool used throughout healthcare to help evaluate and understand the impact and quality of the care being provided to an individual or population. The intent of <a href="index.html#data-of-interest">data of interest</a> is the source data needed to calculate a quality measure, as specified by the data requirements of the measure. For example, for a colorectal cancer screening measure, the data of interest is the set of conditions, procedures, and observations related to determining whether a patient is in the initial population, denominator, and numerator of the quality measure. To effectively evaluate quality measures in such an environment requires timely exchange of the relevant data.</p>
+
+<p>Transactions between Consumers (organizations that want to evaluate quality measures) and Producers (organizations that deliver care to patients) are triggered by use case specific clinical or administrative events such as the completion of a Medication Reconciliation or a request from a Payer for the attestation information. Note that although triggering is implementation specific and out of scope for this IG,  there are a variety of potential triggering points for reporting events within clinical systems.  These include:</p>
+
+<ul>
+  <li><a href="http://www.openinfobutton.org/">Infobutton</a> event listing</li>
+  <li><a href="http://www.hl7.org/fhir/us/ecr/history.cfml">eCR</a> Event Types</li>
+  <li><a href="https://cds-hooks.org/">CDS Hooks</a> Hook definitions</li>
+  <li><a href="http://www.hl7.org/fhir/uv/cpg/history.cfml">CPG-on-FHIR</a> common processes</li>
+</ul>
+
+<p>and there will be a need to convey triggering information in a computable way to EHRs and other clinical systems.</p>
+
+<p>This Implementation Guide (IG) describes three methods of exchanging data quality information using a set of <a href="http://hl7.org/fhir/R4/operations.html" title="Extended Operations on the RESTful API">FHIR operations</a> that provide the framework to exchange CQM data:</p>
+
+<ol>
+  <li>CQM data may be submitted to the Consumer by the Producer using the <a href="#submit-data">Submit Data scenario</a></li>
+  <li>CQM data may be requested from the Producer by the Consumer using the <a href="#collect-data">Collect Data scenario</a></li>
+</ol>
+
+<p class="stu-note">This project recognizes the impact of the <a href="https://argonautwiki.hl7.org/Argonaut_2019_Projects#Clinical_Data_Subscriptions">Argonaut Clinical Data Subscriptions</a> project which is working on event based subscriptions and major revisions to the Subscription resource for FHIR R5. In a future version this guide, a subscription based exchange <!-- in which the Consumer may subscribe to a Producer's Subscription service to be notified when the CQM data is available --> is planned and will align with the outcomes of the Argonaut project.</p>
+
+<p>FHIR operations allow the implementation to be viewed as a ‘black box’ free to decide how to satisfy the query - “give me the data of interest for a measure” - without requiring generic FHIR search functionality.</p>
+
+<h2 id="profiles">Profiles</h2>
+
+<p>The following resources are used in all data exchange transactions:</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Resource Type</th>
+      <th>Profile Name</th>
+      <th>Link to Profile</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Library</td>
+      <td>CQFM Library Profile</td>
+      <td><a href="http://hl7.org/fhir/us/cqfmeasures/STU1/StructureDefinition-library-cqfm.html">CQFM Library</a></td>
+    </tr>
+    <tr>
+      <td>Measure</td>
+      <td>CQFM Measure Profile</td>
+      <td><a href="http://hl7.org/fhir/us/cqfmeasures/STU1/StructureDefinition-measure-cqfm.html">CQFM Measure</a></td>
+    </tr>
+    <tr>
+      <td>MeasureReport</td>
+      <td>DEQM Data Exchange MeasureReport Profile</td>
+      <td><a href="StructureDefinition-datax-measurereport-deqm.html">DEQM Data Exchange MeasureReport Profile</a></td>
+    </tr>
+    <tr>
+      <td>Organization</td>
+      <td>DEQM Organization Profile</td>
+      <td><a href="StructureDefinition-organization-deqm.html">DEQM Organization</a></td>
+    </tr>
+    <tr>
+      <td>Patient</td>
+      <td>QI Core Patient Profile</td>
+      <td><a href="file://C:\GitHub\hl7.fhir.us.qicore#4.0.0\output/StructureDefinition-qicore-patient.html">QI Core Patient</a></td>
+    </tr>
+  </tbody>
+</table>
+
+<p>Depending on the specific Measure, various DEQM and QI Core Profiles are also used in addition to the profiles listed above</p>
+
+<h3 class="no_toc" id="graph-of-deqm-resources">Graph of DEQM Resources</h3>
+
+<p>The DEQM resources form a network through their relationships with each other - either through a direct reference to another resource or through a chain of intermediate references. These groups of resources are referred to as resources graphs.  The DEQM data exchange resource graph is shown in Figure 2-1:</p>
+
+<!-- all this Bootstrap html for getting an narrow image to fit nicely in text - 640 pix wide -->
+
+<!-- file:///assets/images/measure-resource-graph.svg -->
+
+<div>
+<figure class="figure">
+<figcaption class="figure-caption"><strong>Figure 2-1 DEQM Resource Graph</strong></figcaption>
+  <img src="assets/images/measure-resource-graph.svg" class="figure-img img-responsive img-rounded center-block" alt="measure-resource-graph.svg" />
+</figure>
+
+<p></p>
+</div>
+
+<p><br /></p>
+
+<h2 id="data-exchange">Data Exchange</h2>
+
+<h3 id="submit-data">Submit Data</h3>
+
+<p class="highlight-note">The <a href="http://hl7.org/fhir/R4/measure-operation-submit-data.html" title="The effect of invoking this operation is to gather the data required to perform an evaluation of the measure.">$submit-data</a> operation allows a Producer to submit data of interest for a particular quality measure within the specified <a href="index.html#submission-period">submission period</a>.  The operation MAY be repeated during the submission period as additional data relevant to the quality measure becomes available.  The Producer should <strong>SHOULD</strong> submit the data as <a href="index.html#snapshot-update">snapshot updates</a> for submitting data in unless Producer and Consumer agree to use <a href="index.html#incremental-update">incremental updates</a>.</p>
+
+<!-- all this Bootstrap html for getting an narrow image to fit nicely in text - 640 pix wide -->
+
+<!-- file:///assets/images/submit-data-step.svg -->
+
+<div>
+<figure class="figure">
+<figcaption class="figure-caption"><strong>Figure 2-2 Submit Data Steps (Updated figure to show repeated submissions) source: https://docs.google.com/presentation/d/12XOtyF33K_NM5on4mVewRvha9AnFArU8PkOH_x4m9JE/edit?usp=sharing</strong></figcaption>
+  <img src="assets/images/submit-data-step.svg" class="figure-img img-responsive img-rounded center-block" alt="submit-data-step.svg" />
+</figure>
+
+<p></p>
+</div>
+
+<p><del>
+The <em>Submit Data</em> operation allows a Producer to submit data-of-interest for a particular quality measure within the specified time window when the data is ready. There is no expectation that the data submitted represents all the data required to evaluate the quality measure, only that the data is known to be relevant to the quality measure, based on the data requirements for the measure.  Note that resources included in a <em>Submit-Data</em> bundle <strong>SHOULD</strong> be self-contained (in other words, should include all referenced resources in the data), unless the exchange is understood by both parties to be incremental. For example, if an Encounter references a Location, that Location is expected to be included in the bundle, unless the exchange is understood to be incremental and the sending system knows that it has already sent that particular Location as part of a previous submit.
+</del></p>
+
+<!-- all this Bootstrap html for getting an narrow image to fit nicely in text - 640 pix wide -->
+
+<!-- file:///assets/images/mrp-wf-overview.jpg -->
+
+<div>
+<figure class="figure">
+<figcaption class="figure-caption"><strong>Figure 2-2 Submit Data Steps</strong></figcaption>
+  <img src="assets/images/mrp-wf-overview.jpg" class="figure-img img-responsive img-rounded center-block" alt="mrp-wf-overview.jpg" />
+</figure>
+
+<p></p>
+</div>
+
+<h4 class="no_toc" id="gather-data-requirements-from-consumer">Gather Data Requirements from Consumer</h4>
+
+<p>To support the Submit Data operation, an implementation needs to know specifically what data are required to provide as the payload for the operation.  As described in the <a href="index.html#background">Background</a> section of this guide, the profiles used in measuring and reporting CQMs are developed through a multi-stakeholder consensus-based process and are made available to the Producer.  The Producer is able to query for profiles needed for reporting a given measure and the criteria for the sending of the data.  This can be done manually by reviewing the measure definition or computationally by invoking the <em>Data Requirements</em> operation on a Consumer’s measure instance endpoint as described below. These profiles are subsequently referenced in the <code class="highlighter-rouge">MeasureReport.evaluatedResources</code> element when submitting the measure data to the Consumer.</p>
+
+<p>Note that because the data exchange scenarios described are intended to support exchange throughout a measurement period, the versions of measure specifications may change during the measurement period. Care should be taken to ensure the appropriate versioning of measure specifications and the impact of those changes on data exchanged using these methods</p>
+
+<!-- all this Bootstrap html for getting an image to fit nicely in text - 640 pix wide -->
+
+<!-- file:///assets/images/data-requirement.jpg -->
+
+<div>
+<figure class="figure">
+<figcaption class="figure-caption"><strong>Figure 2-3 Data Requirements Operation</strong></figcaption>
+  <img src="assets/images/data-requirement.jpg" class="figure-img-narrow img-responsive img-rounded center-block" alt="data-requirement.jpg" />
+</figure>
+
+<p></p>
+</div>
+
+<h5 class="no_toc" id="apis">APIs</h5>
+
+<p>In addition to the resources listed above, the following artifacts are used in this transaction:</p>
+
+<ol>
+  <li>Data Requirements: <a href="http://hl7.org/fhir/R4/measure-operation-data-requirements.html" title="The data-requirements operation aggregates and returns the parameters and data requirements for the measure and all its dependencies as a single module definition">$data-requirements</a> operation</li>
+</ol>
+
+<h5 class="no_toc" id="usage">Usage</h5>
+
+<p>The required data for each Measure is discovered by invoking the <em>Data Requirements</em> operation on the Consumer’s <code class="highlighter-rouge">Measure/[measure-id]</code> endpoint.  Using either the <code class="highlighter-rouge">GET</code> or <code class="highlighter-rouge">POST</code> Syntax, the operation can be invoked as follows:</p>
+
+<p><code class="highlighter-rouge">GET|[base]/Measure/[measure-id]/$data-requirements?periodStart={periodStart}&amp;periodEnd={periodEnd}</code></p>
+
+<p><code class="highlighter-rouge">POST|[base]/Measure/[measure-id]/$data-requirements</code></p>
+
+<p>Note the use of the <code class="highlighter-rouge">periodStart</code> and <code class="highlighter-rouge">periodEnd</code> parameters supports description of data requirements that filter based on the reporting period. For example, a measure may require data for a certain procedure within the last three years, and the data requirements returned will reflect that period.</p>
+
+<p>
+  <button class="btn btn-info btn-lg" type="button" title="Click to Open or Close Example" data-toggle="collapse" data-target="#data-requirements-example" aria-expanded="false" aria-controls="collapseExample">
+    Click Here To See Example Data Requirements operation
+  </button>
+</p>
+
+<div class="collapse" id="data-requirements-example">
+  <div class="card card-body">
+      <h3 class="no_toc" id="example">Example</h3>
+
+<p><strong>Scenario</strong></p>
+
+<p>Provider X acting in the role of the Producer requests data requirements for the MRP measure from Payer Z which is acting in the role of Consumer.  A Library resource containing the required resources for MRP attestation returned on successful evaluation.</p>
+
+<p><strong>Request using <code class="highlighter-rouge">GET</code></strong></p>
+
+<p><code class="highlighter-rouge">GET [base]/Measure/measure-mrp/$data-requirements?periodStart=2018&amp;periodEnd=2018</code></p>
+
+<p><strong>Request using <code class="highlighter-rouge">POST</code></strong></p>
+
+<p><code class="highlighter-rouge">POST [base]/Measure/measure-mrp/$data-requirements</code></p>
+
+<p><strong>Request body</strong></p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>{
+   "resourceType":"Parameters",
+   "parameter":[
+      {
+         "name":"periodStart",
+         "valueDate":"2018"
+      },
+      {
+         "name":"periodEnd",
+         "valueDate":"2018"
+      }
+    ]
+ }
+</code></pre></div></div>
+
+<p><strong>Response</strong></p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>HTTP/1.1 200 OK
+[other headers]
+</code></pre></div></div>
+
+<p><strong>Response body</strong></p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>{
+  "resourceType": "Library",
+  "id": "library-mrp-example",
+  "text": {
+    "status": "generated",
+    "div": "&lt;div xmlns=\"http://www.w3.org/1999/xhtml\"&gt;&lt;p&gt;&lt;b&gt;Generated Narrative with Details&lt;/b&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;id&lt;/b&gt;: library-mrp-example&lt;/p&gt;&lt;p&gt;&lt;b&gt;url&lt;/b&gt;: &lt;a href=\"http://hl7.org/fhir/us/davinci-deqm/Library/library-mrp-example\"&gt;http://hl7.org/fhir/us/davinci-deqm/Library/library-mrp-example&lt;/a&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;version&lt;/b&gt;: 1.1.1&lt;/p&gt;&lt;p&gt;&lt;b&gt;name&lt;/b&gt;: DEQMLibraryMRPExample&lt;/p&gt;&lt;p&gt;&lt;b&gt;title&lt;/b&gt;: DEQM Library MRP Example&lt;/p&gt;&lt;p&gt;&lt;b&gt;status&lt;/b&gt;: active&lt;/p&gt;&lt;p&gt;&lt;b&gt;type&lt;/b&gt;: module-definition &lt;span style=\"background: LightGoldenRodYellow\"&gt;(Details : {[not stated] code 'module-definition' = 'module-definition)&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;date&lt;/b&gt;: Mar 31, 2020, 8:33:38 AM&lt;/p&gt;&lt;p&gt;&lt;b&gt;description&lt;/b&gt;: Example Library resource to demonstrate the framework for MRP&lt;/p&gt;&lt;p&gt;&lt;b&gt;jurisdiction&lt;/b&gt;: United States of America &lt;span style=\"background: LightGoldenRodYellow\"&gt;(Details : {urn:iso:std:iso:3166 code 'US' = 'United States of America', given as 'United States of America'})&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;dataRequirement&lt;/b&gt;: , , , , , , &lt;/p&gt;&lt;/div&gt;"
+  },
+  "url": "http://hl7.org/fhir/us/davinci-deqm/Library/library-mrp-example",
+  "version": "1.1.1",
+  "name": "DEQMLibraryMRPExample",
+  "title": "DEQM Library MRP Example",
+  "status": "active",
+  "type": {
+    "coding": [
+      {
+        "code": "module-definition"
+      }
+    ]
+  },
+  "date": "2020-03-31T08:33:38-07:00",
+  "description": "Example Library resource to demonstrate the framework for MRP",
+  "jurisdiction": [
+    {
+      "coding": [
+        {
+          "system": "urn:iso:std:iso:3166",
+          "code": "US",
+          "display": "United States of America"
+        }
+      ]
+    }
+  ],
+  "dataRequirement": [
+    {
+      "type": "MeasureReport",
+      "profile": [
+        "http://hl7.org/fhir/us/davinci-deqm/StructureDefinition/datax-measurereport-deqm"
+      ]
+    },
+    {
+      "type": "Patient",
+      "profile": [
+        "http://hl7.org/fhir/us/qicore/StructureDefinition/qicore-patient"
+      ]
+    },
+    {
+      "type": "Encounter",
+      "profile": [
+        "http://hl7.org/fhir/us/qicore/StructureDefinition/qicore-encounter"
+      ]
+    },
+    {
+      "type": "Location",
+      "profile": [
+        "http://hl7.org/fhir/us/qicore/StructureDefinition/qicore-location"
+      ]
+    },
+    {
+      "type": "Task",
+      "profile": [
+        "http://hl7.org/fhir/us/qicore/StructureDefinition/qicore-task"
+      ]
+    },
+    {
+      "type": "Organization",
+      "profile": [
+        "http://hl7.org/fhir/us/davinci-deqm/StructureDefinition/organization-deqm"
+      ]
+    },
+    {
+      "type": "Practitioner",
+      "profile": [
+        "http://hl7.org/fhir/us/qicore/StructureDefinition/qicore-practitioner"
+      ]
+    }
+  ]
+}
+</code></pre></div></div>
+
+  </div>
+</div>
+
+<p>For another example see the <a href="col.html#data-requirements">COL Data Requirements Operation</a> example.</p>
+
+<h4 class="no_toc" id="submit-data-operation">Submit Data Operation</h4>
+
+<p>Once the Producer understands the data requirements, they will use the <em>Submit Data</em> operation to submit a MeasureReport and the referenced resources as discovered by the <em>Data Requirements</em> operation to the Consumer. There is no expectation that the submitted data represents all the data of interest, only that all the data submitted is relevant to the calculation of the measure for a particular subject or population. The Consumer simply accepts the submitted data and there is no expectation that the Consumer will actually evaluate the quality measure in response to every Submit Data. In addition, the Submit Data operation does not provide for analytics or feedback on the submitted data.</p>
+
+<div class="highlight-note">
+  <h5 id="incremental-and-snapshot-updates">Incremental and Snapshot Updates</h5>
+  <p>When the Producer submits updates to the measure data within the submission period, the Producer <strong>SHOULD</strong> use <a href="index.html#snapshot-update">snapshot updates</a> for submitting data in unless Producer and Consumer agree to use <a href="index.html#incremental-update">incremental updates</a>.  In order to support updates:</p>
+
+  <ul>
+    <li>The Producer <strong>SHALL</strong> support stable unique identifiers in the <code class="highlighter-rouge">MeasureReport.id</code> and <code class="highlighter-rouge">MeasureReport.meta.source</code> across updates so that the Consumer system can track whether the payload is an update and process it appropriately.</li>
+    <li>The Consumer <strong>SHOULD</strong> document in its CapabilityStatement whether it supports <code class="highlighter-rouge">snapshot</code>, <code class="highlighter-rouge">incremental</code> or <code class="highlighter-rouge">??both??</code> types of update with $submit-data operation.
+      <ul>
+        <li><code class="highlighter-rouge">...add snippet here ...</code></li>
+      </ul>
+    </li>
+    <li>If the Consumer supports snapshot updates, the contents of the updated submit-data payload entirely replaces the previous submit-data payload.</li>
+    <li>
+      <p>If the Consumer supports incremental updates, the contents of the updated submit-data payload updates the previous submit-data payload data.</p>
+
+      <p>(update the CapabitilityStatement and add snippet here)</p>
+    </li>
+  </ul>
+
+</div>
+
+<!-- all this Bootstrap html for getting an image to fit nicely in text - 640 pix wide -->
+
+<!-- file:///assets/images/submit-data.jpg -->
+
+<div>
+<figure class="figure">
+<figcaption class="figure-caption"><strong>Figure 2-4 Submit data Operation</strong></figcaption>
+  <img src="assets/images/submit-data.jpg" class="figure-img-narrow img-responsive img-rounded center-block" alt="submit-data.jpg" />
+</figure>
+
+<p></p>
+</div>
+
+<h5 class="no_toc" id="apis-1">APIs</h5>
+
+<p>In addition to the resources listed above, the following artifacts are used in this transaction:</p>
+
+<ol>
+  <li>Submit Data operation: <a href="http://hl7.org/fhir/R4/measure-operation-submit-data.html" title="The effect of invoking this operation is to gather the data required to perform an evaluation of the measure.">$submit-data</a></li>
+  <li>Various DEQM and QI Core Profiles depending on the specific Measure</li>
+</ol>
+
+<h5 class="no_toc" id="usage-1">Usage</h5>
+
+<p>Using the <code class="highlighter-rouge">POST</code> Syntax, the operation can be invoked by the Producer:</p>
+
+<p><code class="highlighter-rouge">POST|[base]/Measure/[measure-id]/$submit-data</code></p>
+
+<p>
+  <button class="btn btn-info btn-lg" type="button" title="Click to Open or Close Example" data-toggle="collapse" data-target="#submit-data-example" aria-expanded="false" aria-controls="collapseExample">
+    Click Here To See Example Submit Data Operation (edited for brevity)
+  </button>
+</p>
+
+<div class="collapse" id="submit-data-example">
+  <div class="card card-body">
+      <h3 class="no_toc" id="examples">Examples</h3>
+
+<p><strong>Scenario:</strong></p>
+
+<p>Provider X acting in the role of Producer submits MRP data for Patient Y to Payer Z who is acting in the role of Consumer.  The body of the request is a Parameters resource containing the required profiles for MRP attestation using Task as the resource used to evaluate the measure.  An HTTP Status success code is returned on successful submission.</p>
+
+<p><strong>Request using <code class="highlighter-rouge">POST</code></strong></p>
+
+<p><code class="highlighter-rouge">POST [base]/Measure/measure-mrp/$submit-data</code></p>
+
+<p><strong>Request body</strong></p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>{
+   "resourceType":"Parameters",
+   "parameter":[
+      {
+         "name":"measurereport",
+         "resource":"{"resourceType": "MeasureReport",
+         ...}
+      },
+      {
+        "name":"resource",
+        "resource":"{"resourceType": "Task",
+        ...}
+      },
+      {
+        "name":"resource",
+        "resource":"{"resourceType": "Patient",
+        ...}
+      },
+      {
+        "name":"resource",
+        "resource":"{"resourceType": "Location",
+          ...}
+      },
+      {
+        "name":"resource",
+        "resource":"{"resourceType": "Practitioner",
+        ...}
+      },
+      {
+        "name":"resource",
+        "resource":"{"resourceType": "Organization",
+        ...}
+      },
+      {
+        "name":"resource",
+        "resource":"{"resourceType": "Coverage",
+        ...}
+      },
+
+    ]
+ }
+</code></pre></div></div>
+
+<p><strong>Response</strong></p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>HTTP/1.1 200 OK
+[other headers]
+</code></pre></div></div>
+
+  </div>
+</div>
+
+<p>For a complete un-edited example see the <a href="mrp.html#data-exchange-using-the-submit-data-operation">MRP Submit Data Operation</a> and <a href="col.html#submit-data">COL Submit Data Operation</a> examples.</p>
+
+<h3 id="collect-data">Collect Data</h3>
+
+<p class="highlight-note">In this scenario, the Consumer initiates a <a href="http://hl7.org/fhir/R4/measure-operation-collect-data.html" title="The effect of invoking this operation is to gather the data required to perform an evaluation of the measure.">$collect-data</a> operation to gather any available CQM data for a particular measure from the Producer.  In response to the operation, the Producer returns a MeasureReport containing data relevant to the Measure. Like the <a href="#submit-data">Submit Data scenario</a> described above, this scenario requires that the Producer can gather the data requirements from the consumer for the measure, and that there is no expectation that the data returned represents all the data required to evaluate the quality measure.  Unlike the Submit Data interaction, the exchange is typically incremental as detailed below.</p>
+
+<!-- all this Bootstrap html for getting an narrow image to fit nicely in text - 640 pix wide -->
+
+<!-- file:///assets/images/collect-data-steps-new.jpg -->
+
+<div>
+<figure class="figure">
+<figcaption class="figure-caption"><strong>Figure 2-5 Collect Data Steps - updated image to reflect incremental updates</strong></figcaption>
+  <img src="assets/images/collect-data-steps-new.jpg" class="figure-img img-responsive img-rounded center-block" alt="collect-data-steps-new.jpg" />
+</figure>
+
+<p></p>
+</div>
+
+<p><del>
+In this scenario, the Consumer initiates a <em>Collect Data</em> operation to gather any available CQM data for a particular measure from the Producer.  In response to the operation, the Producer returns a MeasureReport containing data relevant to the Measure. It is assumed that the Producer knows the data requirements for the measure. As with the Submit Data operation, there is no expectation that this MeasureReport contains all the data required to evaluate the quality measure, nor is the measure score expected to be provided.
+</del></p>
+
+<!-- all this Bootstrap html for getting an narrow image to fit nicely in text - 640 pix wide -->
+
+<!-- file:///assets/images/collect-data-steps.jpg -->
+
+<div>
+<figure class="figure">
+<figcaption class="figure-caption"><strong>Figure 2-5 Collect Data Steps</strong></figcaption>
+  <img src="assets/images/collect-data-steps.jpg" class="figure-img img-responsive img-rounded center-block" alt="collect-data-steps.jpg" />
+</figure>
+
+<p></p>
+</div>
+
+<h4 class="no_toc" id="collect-data-operation">Collect Data Operation</h4>
+
+<p>The Consumer uses a Collect Data operation to request any available relevant data for the evaluation of a particular measure from a Producer. This would typically be done on a periodic basis to support incremental collection of quality data. The <code class="highlighter-rouge">lastReceivedOn</code> parameter can be used to indicate when the last Collect Data operation was performed, allowing the Producer to limit the response to only data that has been entered or changed since the last received on date.</p>
+
+<p><del>
+Note that implementing this scenario requires that the Producer system understand the data requirements for the measure in order to provide the data. As with the Submit Data operation, the implementation can either manually determine the relevant data using the measure definition, or the implementation can use the Data Requirements operation to determine relevant data.
+</del></p>
+
+<!-- all this Bootstrap html for getting an image to fit nicely in text - 640 pix wide -->
+
+<!-- file:///assets/images/collect-data.jpg -->
+
+<div>
+<figure class="figure">
+<figcaption class="figure-caption"><strong>Figure 2-6 Collect data Operation</strong></figcaption>
+  <img src="assets/images/collect-data.jpg" class="figure-img-narrow img-responsive img-rounded center-block" alt="collect-data.jpg" />
+</figure>
+
+<p></p>
+</div>
+
+<h4 class="no_toc" id="apis-2">APIs</h4>
+
+<p>In addition to the resources listed above, the following artifacts are used in this transaction:</p>
+
+<ol>
+  <li>Collect Data operation:<a href="http://hl7.org/fhir/R4/measure-operation-collect-data.html" title="The effect of invoking this operation is to gather the data required to perform an evaluation of the measure.">$collect-data</a></li>
+  <li>Various DEQM and QI Core Profiles depending on the specific Measure</li>
+</ol>
+
+<h4 class="no_toc" id="usage-2">Usage</h4>
+
+<p><strong>Collect Data:</strong></p>
+
+<p>Using either the <code class="highlighter-rouge">GET</code> or <code class="highlighter-rouge">POST</code> Syntax, the operation can be invoked by the Consumer:</p>
+
+<p><code class="highlighter-rouge">GET|[base]/Measure/[measure-id]/$collect-data&amp;[parameters]</code></p>
+
+<p><code class="highlighter-rouge">POST|[base]/Measure/[measure-id]/$collect-data</code></p>
+
+<p>
+  <button class="btn btn-info btn-lg" type="button" title="Click to Open or Close Example" data-toggle="collapse" data-target="#collect-data-example" aria-expanded="false" aria-controls="collapseExample">
+    Click Here To See Example Collect Data operation
+  </button>
+</p>
+
+<div class="collapse" id="collect-data-example">
+  <div class="card card-body">
+      <h3 id="examples">Examples</h3>
+
+<p><strong>Scenario:</strong></p>
+
+<p>Payer Z acting in the role of the Consumer collect Patient Z’s MRP data from Provider X which is acting in role of the Producer</p>
+
+<p><strong>Request using GET Syntax</strong></p>
+
+<p><code class="highlighter-rouge">GET [base]/MeasureReport/measure-mrp/$collect-data?subject=Patient/patient-z&amp;provider=Practitioner/provider-x&amp;periodStart=2018-06-19</code></p>
+
+<p><strong>Request using POST Syntax</strong></p>
+
+<p><code class="highlighter-rouge">POST [base]/MeasureReport/measure-mrp/$collect-data</code></p>
+
+<p><strong>Request body</strong></p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>{
+   "resourceType":"Parameters",
+   "parameter":[
+      {
+         "name":"subject",
+         "valueUri":"Patient/patient-z"
+      },
+      {
+         "name":"practitioner",
+         "valueUri":"Practitioner/provider-x"
+      },
+      {
+         "name":"periodStart",
+         "valueDate":"Practitioner/2018-06-19"
+       }
+    ]
+ }
+</code></pre></div></div>
+
+<p><strong>Response</strong></p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>HTTP/1.1 200 OK
+[other headers]
+</code></pre></div></div>
+
+<p><strong>Response body</strong></p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>{
+   "resourceType":"Parameters",
+   "parameter":[
+      {
+         "name":"measurereport",
+         "resource":"{"resourceType": "MeasureReport",
+         ...}
+      },
+      {
+        "name":"resource",
+        "resource":"{"resourceType": "Task",
+        ...}
+      },
+      {
+        "name":"resource",
+        "resource":"{"resourceType": "Patient",
+        ...}
+      },
+      {
+        "name":"resource",
+        "resource":"{"resourceType": "Location",
+          ...}
+      },
+      {
+        "name":"resource",
+        "resource":"{"resourceType": "Practitioner",
+        ...}
+      },
+      {
+        "name":"resource",
+        "resource":"{"resourceType": "Organization",
+        ...}
+      },
+      {
+        "name":"resource",
+        "resource":"{"resourceType": "Encounter",
+        ...}
+      },
+      {
+        "name":"resource",
+        "resource":"{"resourceType": "Coverage",
+        ...}
+      },
+
+    ]
+ }
+</code></pre></div></div>
+
+  </div>
+</div>
+
+<p>For a complete un-edited example see the <a href="col.html#collect-data">COL Collect Data Operation</a> example.</p>
+
+<h3 id="submit-data-and-collect-data-for-multiple-patients">Submit Data and Collect Data for Multiple Patients</h3>
+
+<h4 class="no_toc" id="submit-data-operation-request-for-multiple-patients">Submit Data Operation Request for Multiple Patients</h4>
+
+<p>The <a href="http://hl7.org/fhir/R4/http.html#transaction">transaction</a> bundle processing as defined by FHIR specification is used for transacting the body of Submit Data operation request for <em>multiple</em> patients in a single interaction.</p>
+
+<ul>
+  <li>The transaction bundle contains an entry for each patient as illustrated in the examples below:
+    <ul>
+      <li>The fullUrl is a UUID (<code class="highlighter-rouge">urn:uuid:...</code>).</li>
+      <li>The resource is a Parameters resource as defined in the operation.</li>
+      <li>The request method is <code class="highlighter-rouge">POST</code></li>
+      <li>The request url is the operation endpoint <code class="highlighter-rouge">Measure/$submit-data</code> or <code class="highlighter-rouge">Measure/[measure-id]/$submit-data</code>.</li>
+    </ul>
+  </li>
+  <li>When resolving references, references are never resolved outside the Parameters resource.  Specifically, resolution stops at the elements Parameters.parameter.resource.”</li>
+  <li>The matching <a href="http://hl7.org/fhir/R4//http.html#transaction-response">transaction response</a> is returned by the operation endpoint server.</li>
+</ul>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>POST|[base]
+
+{
+  "resourceType": "Bundle",
+  "type": "transaction",
+  "entry": [
+    {
+      "fullUrl": "urn:uuid:79378cb8-8f58-48e8-a5e8-60ac2755b674",
+      "resource": {
+        "resourceType": "Parameters",
+        "parameter": [
+          {
+            "name": "measurereport",
+            "resource": {
+              "resourceType": "MeasureReport",
+              ...,
+            "name": "resource",
+            "resource": {
+              "resourceType": "Patient",
+              ...,
+            [other "resource" parameters]
+          ]
+        },
+        "request": {
+          "method": "POST",
+          "url": "Measure/[measure-id]/$submit-data"
+            }
+            ....
+</code></pre></div></div>
+
+<h4 class="no_toc" id="collect-data-operation-response-for-multiple-patients">Collect Data Operation Response for Multiple Patients</h4>
+
+<p>Because operations are typically executed synchronously, a collect data request to a server returns a Parameter resource for a <em>single</em> patient as defined by the <code class="highlighter-rouge">$collect-data</code> operation.  Execution of this operation and returning multiple patients in a single <em>asynchronous</em> transaction is outside the scope of this guide.</p>
+
+<p><br /></p>
+
+:ET

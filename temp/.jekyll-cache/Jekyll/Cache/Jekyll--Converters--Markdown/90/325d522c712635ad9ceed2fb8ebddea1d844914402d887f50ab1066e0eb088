@@ -1,0 +1,33 @@
+I"
+<p>The DEQM Organization Profile defines the constraints for representing the organization for which the practitioner was working when he performed the measure to which he is attesting.</p>
+
+<h3 id="mandatory-data-elements-and-terminology">Mandatory Data Elements and Terminology</h3>
+
+<p>The following data-elements are mandatory (i.e data MUST be present).</p>
+
+<p><strong>Each Organization must have:</strong></p>
+
+<ol>
+  <li>Either an NPI or EIN (TIN) identifier</li>
+</ol>
+
+<!--
+
+Each Organization *should* have ([Must Support](guidance.html#must-support)):
+
+1. The beneficiary
+
+-->
+
+<p><strong>Additional Profile specific implementation guidance:</strong></p>
+
+<p>The “Full View” tab below displays all the identifier slices including the <em>TIN</em> slice defined in this guide and <em>NPI</em> slice which is inherited indirectly from the <a href="http://hl7.org/fhir/us/core/STU3.1/StructureDefinition-us-core-organization.html">US Core Organization Profile</a>.</p>
+
+<h3 id="examples">Examples</h3>
+
+<li><a href="Organization-organization02.html">DaVinciHospital02</a></li>
+<li><a href="Organization-organization03.html">DaVinciHospital03</a></li>
+<li><a href="Organization-organization04.html">DVPayer04</a></li>
+<li><a href="Organization-organization01.html">DaVinciHospital01</a></li>
+
+:ET

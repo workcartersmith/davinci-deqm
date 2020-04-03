@@ -1,0 +1,43 @@
+{
+  "path": "http://hl7.org/fhir/R4/",
+  "canonical": "http://hl7.org/fhir/us/davinci-deqm",
+  "igId": "hl7.fhir.us.davinci-deqm",
+  "igName": "DataExchangeForQualityMeasuresSTU2forFHIRR4ImplementationGuide",
+  "packageId": "hl7.fhir.us.davinci-deqm",
+  "igVer": "1.1.1",
+  "errorCount": 109,
+  "version": "4.0.1",
+  "revision": "a53ec6ee1b",
+  "versionFull": "4.0.1-a53ec6ee1b",
+  "toolingVersion": "4.2.0",
+  "toolingRevision": "3",
+  "toolingVersionFull": "4.2.0 (3)",
+  "totalFiles": 57,
+  "processedFiles": 247,
+  "genDate": "Thu, Apr 2, 2020 18:14-0700",
+  "genDay": "02/04/2020",
+  "ig": {
+    "id": "hl7.fhir.us.davinci-deqm",
+    "name": "DataExchangeForQualityMeasuresSTU2forFHIRR4ImplementationGuide",
+    "title": "Data Exchange For Quality Measures STU2 for FHIR R4",
+    "url": "http://hl7.org/fhir/us/davinci-deqm/ImplementationGuide/hl7.fhir.us.davinci-deqm",
+    "version": "1.1.1",
+    "status": "draft",
+    "experimental": false,
+    "publisher": "HL7 International - Clinical Quality Information Work Group",
+    "gitstatus": "templates-branch",
+    "contact": [
+      {
+        "telecom": [
+          "http://www.hl7.org/Special/committees/cqi/index.cfm"
+        ]
+      }
+    ],
+    "date": "2020-04-02T18:14:39-07:00",
+    "copyright": "Used by permission of HL7 International - Clinical Quality Information Work Group, all rights reserved Creative Commons License",
+    "fhirVersion": "4.0.1"
+  },
+  "cqfm": "http://hl7.org/fhir/us/cqfmeasures",
+  "uscore": "http://hl7.org/fhir/us/core",
+  "qicore": "http://hl7.org/fhir/us/qicore"
+}

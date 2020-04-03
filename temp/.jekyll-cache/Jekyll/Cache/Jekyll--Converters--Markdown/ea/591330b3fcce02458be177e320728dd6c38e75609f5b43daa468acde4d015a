@@ -1,0 +1,30 @@
+I"Ö
+<p>The DEQM Coverage Profile defines the constraints for representing  the subscriber information to the Payer.  This along with the patient first name, last name, date of birth and gender allows the payer to identify the member in their system.</p>
+
+<h3 id="mandatory-data-elements-and-terminology">Mandatory Data Elements and Terminology</h3>
+
+<p>The following data-elements are mandatory (i.e data MUST be present).</p>
+
+<p><strong>Each Coverage must have:</strong></p>
+
+<ol>
+  <li>A subscriber ID</li>
+</ol>
+
+<p>Each Coverage <em>should</em> have (<a href="guidance.html#must-support">Must Support</a>):</p>
+
+<ol>
+  <li>The beneficiary</li>
+</ol>
+
+<p><strong>Additional Profile specific implementation guidance:</strong></p>
+
+<p>None</p>
+
+<h3 id="examples">Examples</h3>
+
+<li><a href="Coverage-coverage01.html">Coverage/coverage01</a></li>
+<li><a href="Coverage-coverage02.html">Coverage/coverage02</a></li>
+<li><a href="Coverage-coverage03.html">Coverage/coverage03</a></li>
+
+:ET

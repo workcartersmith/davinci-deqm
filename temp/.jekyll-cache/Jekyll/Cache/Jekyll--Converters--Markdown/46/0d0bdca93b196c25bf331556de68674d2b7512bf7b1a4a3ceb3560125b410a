@@ -1,0 +1,13 @@
+I"è
+<p>The DEQM MedicationRequest Profile describes a medication prescription</p>
+
+<h3 id="mandatory-data-elements-and-terminology">Mandatory Data Elements and Terminology</h3>
+
+<p>The following data-elements are mandatory (i.e data MUST be present).</p>
+
+<p><strong>Each MedicationRequest must have:</strong></p>
+
+<ol>
+  <li>A medication code that identifies the medication being requested</li>
+</ol>
+:ET

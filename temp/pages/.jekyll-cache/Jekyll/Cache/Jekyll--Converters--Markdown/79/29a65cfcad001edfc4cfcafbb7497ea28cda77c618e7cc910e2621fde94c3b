@@ -1,0 +1,39 @@
+I"
+<div class="markdown-toc">
+<ul id="markdown-toc">
+  <li><a href="#jekyll-header" id="markdown-toc-jekyll-header">jekyll header</a></li>
+</ul>
+
+</div>
+<hr />
+<h2 id="jekyll-header">jekyll header</h2>
+<p>name: change-notes
+title: Change notes
+layout: default
+—</p>
+
+<p>The Data Exchange For Quality Measures Implementation Guide was developed under the  <a href="#">Davinci Project</a></p>
+
+<p>Changes and Updates for version 0.2.0</p>
+
+<ol>
+  <li>Applied all resolutions from STU1 Ballot</li>
+  <li>Updated and Expanded the Background Section on the Clinical Quality Measures Ecosystem and how this guide fits into that Ecosystem.</li>
+  <li>Added Guidance on Measure Reporting</li>
+  <li>Added Use Cases for Colorectal Screening and Venous Thromboembolism Prophylaxis Measure Reporting</li>
+</ol>
+
+<p>Changes and Updates for version 1.0.0</p>
+
+<ol>
+  <li>Applied all resolutions from May STU1 Ballot</li>
+</ol>
+
+<p>Changes and Updates for version 1.1.0</p>
+
+<ol>
+  <li>Creation of FHIR R4 version.</li>
+  <li>Additional examples</li>
+</ol>
+
+:ET
