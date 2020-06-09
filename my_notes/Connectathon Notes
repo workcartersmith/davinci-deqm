@@ -1,0 +1,21 @@
+contained  -
+
+
+response to collect-data as a bundle.  measurereport as a parameters resource -
+
+submit-data - parameters
+collect-data - parameters
+
+Should not used contained - unless appropriate only exists within the context of the operation.
+
+evaluatemeasure returns parameters
+
+Gaps not using contained.  - returning parameter of Bundles...
+
+Bulk data to care gaps.  1 to *  return Bundle
+
+operations consistently
+
+and support data.
+
+ideally ndjson with bundles...
