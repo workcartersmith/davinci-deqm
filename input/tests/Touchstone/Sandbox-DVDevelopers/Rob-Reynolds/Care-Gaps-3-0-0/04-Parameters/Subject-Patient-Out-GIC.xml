@@ -53,14 +53,19 @@
     <description value="Default end of a gaps through period."/>
   </variable>
   <variable>
-    <name value="freeformAdditionalParams"/>
-    <defaultValue value="status=open-gap&amp;status=closed-gap&amp;subject=Patient/bad-value&amp;measureId=measure-EXM130-7.3.000"/>
-    <description value="Care Gap variable parameters; status is minimum required."/>
-  </variable>
-  <variable>
     <name value="expectedNumParameters"/>
     <defaultValue value="0"/>
     <description value="Number of expected Parameters resources in response.  Will be validated in the test."/>
+  </variable>
+  <variable>
+    <name value="statusOpen"/>
+    <defaultValue value="open-gap"/>
+    <description value="Status open."/>
+  </variable>
+  <variable>
+    <name value="statusClosed"/>
+    <defaultValue value="closed-gap"/>
+    <description value="Status closed."/>
   </variable>
   <test id="Subject-Patient-Out">
     <name value="Subject-Patient-Out"/>
@@ -79,7 +84,9 @@
         <encodeRequestUrl value="true"/>
         <method value="get"/>
         <origin value="1" />
-        <params value="/$care-gaps?periodStart=${periodStart}&amp;periodEnd=${periodEnd}&amp;${freeformAdditionalParams}"/>
+        <!-- Could be missing "expectedNumParameters" with a value of 0..? Unsure, ask about it.
+             Also, in Touchstone, it lists "status=open-gap&status=closed-gap", so maybe status=${status}&status=${status} isn't what's wanted? -->
+        <params value="/$care-gaps?periodStart=${periodStart}&amp;periodEnd=${periodEnd}&amp;status=${statusOpen}&amp;status=${statusClosed}&amp;subject=${subject}&amp;measureId=${measureId}"/>
         <responseId value="searchResponse"/>
       </operation>
     </action>
