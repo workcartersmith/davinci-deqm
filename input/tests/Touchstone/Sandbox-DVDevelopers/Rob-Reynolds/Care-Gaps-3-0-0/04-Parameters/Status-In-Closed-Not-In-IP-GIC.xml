@@ -54,7 +54,7 @@
   </variable>
   <variable>
     <name value="subject"/>
-    <defaultValue value="Patient/caregaps-parameters-status"/>
+    <defaultValue value="Patient/caregaps-parameters-standard"/>
     <description value="Subject parameter."/>
   </variable>
   <variable>
@@ -63,18 +63,13 @@
     <description value="Measure to be processes."/>
   </variable>
   <variable>
-    <name value="statusClosed"/>
-    <defaultValue value="closed-gap"/>
-    <description value="Stauts closed gap."/>
-  </variable>
-  <variable>
     <name value="statusNotIn"/>
     <defaultValue value="not-in-ip"/>
     <description value="Status not in"/>
   </variable>
   <variable>
     <name value="expectedNumParameters"/>
-    <defaultValue value="2"/>
+    <defaultValue value="1"/>
     <description value="Number of expected Parameters resources in response.  Will be validated in the test."/>
   </variable>
   <test id="Status-In-Closed-Not-In-IP">
@@ -94,7 +89,7 @@
         <encodeRequestUrl value="true"/>
         <method value="get"/>
         <origin value="1" />
-        <params value="/$care-gaps?periodStart=${periodStart}&amp;periodEnd=${periodEnd}&amp;status=${statusClosed}&amp;status=${statusNotIn}&amp;measureId=${measureId}&amp;subject=${subject}"/>
+        <params value="/$care-gaps?periodStart=${periodStart}&amp;periodEnd=${periodEnd}&amp;status=${statusNotIn}&amp;measureId=${measureId}&amp;subject=${subject}"/>
         <responseId value="searchResponse"/>
       </operation>
     </action>
